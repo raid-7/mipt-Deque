@@ -1,240 +1,183 @@
+// https://github.com/raid-7/mipt-Deque
+
 #include <iterator>
 #include <algorithm>
 #include <stdexcept>
 
 namespace dequeNS {
 
-	template <class DequeType, class ElementType>
+	template <class DequeType, class ElementType, bool reversed>
 	class DequeIndexIterator :public std::iterator<std::random_access_iterator_tag, ElementType, unsigned int> {
 	public:
-		DequeIndexIterator(DequeType* deque, unsigned int initialIndex, bool reversed)
-			:deque(deque), index(initialIndex), reversed(reversed) {}
+		DequeIndexIterator(DequeType* deque, unsigned int initialIndex)
+			:deque(deque), index(initialIndex) {
+		}
 
-		DequeIndexIterator<DequeType, ElementType>& operator ++() {
+		DequeIndexIterator<DequeType, ElementType, reversed>& operator ++() {
 			++index;
 			return *this;
 		}
 
-		const DequeIndexIterator<DequeType, ElementType> operator ++(int) {
-			DequeIndexIterator<DequeType, ElementType> res = *this;
+		const DequeIndexIterator<DequeType, ElementType, reversed> operator ++(int) {
+			DequeIndexIterator<DequeType, ElementType, reversed> res = *this;
 			++(*this);
 			return res;
 		}
 
-		DequeIndexIterator<DequeType, ElementType>& operator --() {
+		DequeIndexIterator<DequeType, ElementType, reversed>& operator --() {
 			--index;
 			return *this;
 		}
 
-		const DequeIndexIterator<DequeType, ElementType> operator --(int) {
-			DequeIndexIterator<DequeType, ElementType> res = *this;
+		const DequeIndexIterator<DequeType, ElementType, reversed> operator --(int) {
+			DequeIndexIterator<DequeType, ElementType, reversed> res = *this;
 			--(*this);
 			return res;
 		}
 
-		DequeIndexIterator<DequeType, ElementType>& operator +=(int n) {
+		DequeIndexIterator<DequeType, ElementType, reversed>& operator +=(int n) {
 			index += n;
 			return *this;
 		}
-		DequeIndexIterator<DequeType, ElementType>& operator -=(int n) {
+		DequeIndexIterator<DequeType, ElementType, reversed>& operator -=(int n) {
 			index -= n;
 			return *this;
 		}
 
-		const ElementType& operator *() const {
+		ElementType& operator *() const {
 			return (*this)[0];
 		}
 
-		const ElementType& operator ->() const {
-			return *(*this);
+		ElementType* operator ->() const {
+			return &(*(*this));
 		}
 
-		const ElementType& operator [](int x) const {
+		ElementType& operator [](int x) const {
 			if (reversed)
 				return (*deque)[deque->size() - index - x - 1];
 			return (*deque)[index + x];
 		}
 
 		template <class DstDeque, class DstElement>
-		int distanceTo(const DequeIndexIterator<DstDeque, DstElement>& oth) const {
+		int distanceTo(const DequeIndexIterator<DstDeque, DstElement, reversed>& oth) const {
 			if (oth.deque != deque)
 				throw std::invalid_argument("Comparing iterators reference to different containers!");
 
 			return oth.index - index;
 		}
 
-		template <class CmpDeque, class CmpElement>
-		int compareTo(const DequeIndexIterator<CmpDeque, CmpElement>& oth) const {
+		template <class CmpDeque, class CmpElement, bool CmpReversed>
+		int compareTo(const DequeIndexIterator<CmpDeque, CmpElement, CmpReversed>& oth) const {
 			if (oth.deque != deque)
 				throw std::invalid_argument("Comparing iterators reference to different containers!");
 
-			return index < oth.index ? -1 : index > oth.index ? +1 : 0;
+			if (reversed == CmpReversed)
+				return index < oth.index ? -1 : index > oth.index ? +1 : 0;
+
+			int indexA = reversed ? deque->size() - index : index;
+			int indexB = CmpReversed ? oth.deque->size() - oth.index : oth.index;
+			return indexA < indexB ? -1 : indexA > indexB ? +1 : 0;
 		}
 
 
 	protected:
 		DequeType* deque;
 		int index;
-		bool reversed;
-	};
-
-	template <class DequeType, class ElementType>
-	class MutableDequeIndexIterator: public DequeIndexIterator<DequeType, ElementType> {
-	public:
-		MutableDequeIndexIterator(DequeType* deque, unsigned int initialIndex, bool reversed)
-			:DequeIndexIterator<DequeType, ElementType>(deque, initialIndex, reversed) {}
-
-		ElementType& operator [](int x) {
-			if (DequeIndexIterator<DequeType, ElementType>::reversed)
-				return (*DequeIndexIterator<DequeType, ElementType>::deque)
-						[DequeIndexIterator<DequeType, ElementType>::deque->size()
-						 	 - DequeIndexIterator<DequeType, ElementType>::index - x - 1];
-			return (*DequeIndexIterator<DequeType, ElementType>::deque)
-					[DequeIndexIterator<DequeType, ElementType>::index + x];
-		}
-
-		ElementType& operator *() {
-			return (*this)[0];
-		}
-
-		ElementType& operator ->() {
-			return *(*this);
-		}
-
-		const MutableDequeIndexIterator<DequeType, ElementType> operator ++(int) {
-			MutableDequeIndexIterator<DequeType, ElementType> res = *this;
-			++(*this);
-			return res;
-		}
-
-		const MutableDequeIndexIterator<DequeType, ElementType> operator --(int) {
-			MutableDequeIndexIterator<DequeType, ElementType> res = *this;
-			--(*this);
-			return res;
-		}
-
-		MutableDequeIndexIterator<DequeType, ElementType>& operator ++() {
-			DequeIndexIterator<DequeType, ElementType>::operator++();
-			return *this;
-		}
-		MutableDequeIndexIterator<DequeType, ElementType>& operator --() {
-			DequeIndexIterator<DequeType, ElementType>::operator--();
-			return *this;
-		}
-
-		MutableDequeIndexIterator<DequeType, ElementType>& operator +=(int n) {
-			DequeIndexIterator<DequeType, ElementType>::operator+=(n);
-			return *this;
-		}
-		MutableDequeIndexIterator<DequeType, ElementType>& operator -=(int n) {
-			DequeIndexIterator<DequeType, ElementType>::operator-=(n);
-			return *this;
-		}
 	};
 
 
-
-	template <class DequeTypeA, class ElementTypeA, class DequeTypeB, class ElementTypeB>
-	bool operator ==(const DequeIndexIterator<DequeTypeA, ElementTypeA>& a,
-						const DequeIndexIterator<DequeTypeB, ElementTypeB>& b) {
+	template <class DequeA, class ElementA, bool ReversedA, class DequeB, class ElementB, bool ReversedB>
+	bool operator ==(const DequeIndexIterator<DequeA, ElementA, ReversedA>& a,
+						const DequeIndexIterator<DequeB, ElementB, ReversedB>& b) {
 		return a.compareTo(b) == 0;
 	}
 
-	template <class DequeTypeA, class ElementTypeA, class DequeTypeB, class ElementTypeB>
-	bool operator !=(const DequeIndexIterator<DequeTypeA, ElementTypeA>& a,
-						const DequeIndexIterator<DequeTypeB, ElementTypeB>& b) {
+	template <class DequeA, class ElementA, bool ReversedA, class DequeB, class ElementB, bool ReversedB>
+	bool operator !=(const DequeIndexIterator<DequeA, ElementA, ReversedA>& a,
+			const DequeIndexIterator<DequeB, ElementB, ReversedB>& b) {
 		return a.compareTo(b) != 0;
 	}
 
-	template <class DequeTypeA, class ElementTypeA, class DequeTypeB, class ElementTypeB>
-	bool operator <(const DequeIndexIterator<DequeTypeA, ElementTypeA>& a,
-						const DequeIndexIterator<DequeTypeB, ElementTypeB>& b) {
+	template <class DequeA, class ElementA, bool ReversedA, class DequeB, class ElementB, bool ReversedB>
+	bool operator <(const DequeIndexIterator<DequeA, ElementA, ReversedA>& a,
+			const DequeIndexIterator<DequeB, ElementB, ReversedB>& b) {
 		return a.compareTo(b) < 0;
 	}
 
-	template <class DequeTypeA, class ElementTypeA, class DequeTypeB, class ElementTypeB>
-	bool operator >(const DequeIndexIterator<DequeTypeA, ElementTypeA>& a,
-						const DequeIndexIterator<DequeTypeB, ElementTypeB>& b) {
+	template <class DequeA, class ElementA, bool ReversedA, class DequeB, class ElementB, bool ReversedB>
+	bool operator >(const DequeIndexIterator<DequeA, ElementA, ReversedA>& a,
+			const DequeIndexIterator<DequeB, ElementB, ReversedB>& b) {
 		return a.compareTo(b) > 0;
 	}
 
-	template <class DequeTypeA, class ElementTypeA, class DequeTypeB, class ElementTypeB>
-	bool operator >=(const DequeIndexIterator<DequeTypeA, ElementTypeA>& a,
-						const DequeIndexIterator<DequeTypeB, ElementTypeB>& b) {
+	template <class DequeA, class ElementA, bool ReversedA, class DequeB, class ElementB, bool ReversedB>
+	bool operator >=(const DequeIndexIterator<DequeA, ElementA, ReversedA>& a,
+			const DequeIndexIterator<DequeB, ElementB, ReversedB>& b) {
 		return a.compareTo(b) >= 0;
 	}
 
-	template <class DequeTypeA, class ElementTypeA, class DequeTypeB, class ElementTypeB>
-	bool operator <=(const DequeIndexIterator<DequeTypeA, ElementTypeA>& a,
-						const DequeIndexIterator<DequeTypeB, ElementTypeB>& b) {
+	template <class DequeA, class ElementA, bool ReversedA, class DequeB, class ElementB, bool ReversedB>
+	bool operator <=(const DequeIndexIterator<DequeA, ElementA, ReversedA>& a,
+			const DequeIndexIterator<DequeB, ElementB, ReversedB>& b) {
 		return a.compareTo(b) <= 0;
 	}
 
-	template <class DequeType, class ElementType>
-	DequeIndexIterator<DequeType, ElementType> operator +(
-			const DequeIndexIterator<DequeType, ElementType>& it, int a) {
-		DequeIndexIterator<DequeType, ElementType> res = it;
+	template <class DequeType, class ElementType, bool Reversed>
+	DequeIndexIterator<DequeType, ElementType, Reversed> operator +(
+			const DequeIndexIterator<DequeType, ElementType, Reversed>& it, int a) {
+		DequeIndexIterator<DequeType, ElementType, Reversed> res = it;
 		res += a;
 		return res;
 	}
 
-	template <class DequeType, class ElementType>
-	DequeIndexIterator<DequeType, ElementType> operator +(int a,
-						const DequeIndexIterator<DequeType, ElementType>& it) {
+	template <class DequeType, class ElementType, bool Reversed>
+	DequeIndexIterator<DequeType, ElementType, Reversed> operator +(int a,
+						const DequeIndexIterator<DequeType, ElementType, Reversed>& it) {
 		return it + a;
 	}
 
-	template <class DequeType, class ElementType>
-	DequeIndexIterator<DequeType, ElementType> operator -(
-			const DequeIndexIterator<DequeType, ElementType>& it, int a) {
-		DequeIndexIterator<DequeType, ElementType> res = it;
+	template <class DequeType, class ElementType, bool Reversed>
+	DequeIndexIterator<DequeType, ElementType, Reversed> operator -(
+			const DequeIndexIterator<DequeType, ElementType, Reversed>& it, int a) {
+		DequeIndexIterator<DequeType, ElementType, Reversed> res = it;
 		res -= a;
 		return res;
 	}
 
-	template <class DequeTypeA, class ElementTypeA, class DequeTypeB, class ElementTypeB>
-	int operator -(const DequeIndexIterator<DequeTypeA, ElementTypeA>& a,
-						const DequeIndexIterator<DequeTypeB, ElementTypeB>& b) {
+	template <class DequeTypeA, class ElementTypeA, class DequeTypeB, class ElementTypeB, bool Reversed>
+	int operator -(const DequeIndexIterator<DequeTypeA, ElementTypeA, Reversed>& a,
+						const DequeIndexIterator<DequeTypeB, ElementTypeB, Reversed>& b) {
 		return b.distanceTo(a);
 	}
 
-	template <class DequeType, class ElementType>
-	MutableDequeIndexIterator<DequeType, ElementType> operator +(
-			const MutableDequeIndexIterator<DequeType, ElementType>& it, int a) {
-		MutableDequeIndexIterator<DequeType, ElementType> res = it;
-		res += a;
-		return res;
-	}
-
-	template <class DequeType, class ElementType>
-	MutableDequeIndexIterator<DequeType, ElementType> operator +(int a,
-						const MutableDequeIndexIterator<DequeType, ElementType>& it) {
-		return it + a;
-	}
-
-	template <class DequeType, class ElementType>
-	MutableDequeIndexIterator<DequeType, ElementType> operator -(
-			const MutableDequeIndexIterator<DequeType, ElementType>& it, int a) {
-		MutableDequeIndexIterator<DequeType, ElementType> res = it;
-		res -= a;
-		return res;
-	}
-
-
 
 	template <class Value>
-	class deque {
+	class Deque {
 	public:
-		typedef MutableDequeIndexIterator<deque<Value>, Value> iterator;
-		typedef DequeIndexIterator<const deque<Value>, Value> const_iterator;
-		typedef iterator reverse_iterator;
-		typedef const_iterator const_reverse_iterator;
+		typedef DequeIndexIterator<Deque<Value>, Value, false> iterator;
+		typedef DequeIndexIterator<const Deque<Value>, const Value, false> const_iterator;
+		typedef DequeIndexIterator<Deque<Value>, Value, true> reverse_iterator;
+		typedef DequeIndexIterator<const Deque<Value>, const Value, true> const_reverse_iterator;
 
-		deque()
+		Deque()
 			:data(new Value[MIN_CAPACITY]), head(0), tail(0), count(0), capacity(MIN_CAPACITY) {}
-		deque(const deque<Value>& from)
+		Deque(const Deque<Value>& from)
 			:data(new Value[from.capacity]), head(0), tail(from.count), count(from.count), capacity(from.capacity) {
 			copyFrom(from.data, from.head, from.tail, from.count);
+		}
+
+		Deque<Value>& operator =(const Deque<Value>& from) {
+			if (&from == this)
+				return *this;
+
+			delete[] data;
+			data = new Value[from.capacity];
+			head = 0;
+			tail = from.count;
+			count = from.count;
+			capacity = from.capacity;
+			copyFrom(from.data, from.head, from.tail, from.count);
+			return *this;
 		}
 
 		void push_back(const Value& v) {
@@ -267,10 +210,10 @@ namespace dequeNS {
 			return res;
 		}
 
-		Value& operator[](unsigned int index) {
+		Value& operator[](int index) {
 			return data[(head + index) % capacity];
 		}
-		const Value& operator[](unsigned int index) const {
+		const Value& operator[](int index) const {
 			return data[(head + index) % capacity];
 		}
 
@@ -296,48 +239,48 @@ namespace dequeNS {
 		}
 
 		iterator begin() {
-			return iterator(this, 0, false);
+			return iterator(this, 0);
 		}
 		iterator end() {
-			return iterator(this, count, false);
+			return iterator(this, count);
 		}
 
 		const_iterator begin() const {
-			return const_iterator(this, 0, false);
+			return const_iterator(this, 0);
 		}
 		const_iterator end() const {
-			return const_iterator(this, count, false);
+			return const_iterator(this, count);
 		}
 
 		const_iterator cbegin() const {
-			return const_iterator(this, 0, false);
+			return const_iterator(this, 0);
 		}
 		const_iterator cend() const {
-			return const_iterator(this, count, false);
+			return const_iterator(this, count);
 		}
 
 		reverse_iterator rbegin() {
-			return reverse_iterator(this, 0, true);
+			return reverse_iterator(this, 0);
 		}
 		reverse_iterator rend() {
-			return reverse_iterator(this, count, true);
+			return reverse_iterator(this, count);
 		}
 
 		const_reverse_iterator rbegin() const {
-			return const_reverse_iterator(this, 0, true);
+			return const_reverse_iterator(this, 0);
 		}
 		const_reverse_iterator rend() const {
-			return const_reverse_iterator(this, count, true);
+			return const_reverse_iterator(this, count);
 		}
 
 		const_reverse_iterator crbegin() const {
-			return const_reverse_iterator(this, 0, true);
+			return const_reverse_iterator(this, 0);
 		}
 		const_reverse_iterator crend() const {
-			return const_reverse_iterator(this, count, true);
+			return const_reverse_iterator(this, count);
 		}
 
-		~deque() {
+		~Deque() {
 			delete[] data;
 			data = nullptr;
 		}
@@ -352,13 +295,12 @@ namespace dequeNS {
 
 
 		void increaseCapacity() {
-			if (count == capacity)
+			if (count >= capacity)
 				changeCapacity(capacity * 2);
 		}
 		void decreaseCapacity() {
 			if (count * 4 <= capacity)
 				changeCapacity(count * 2);
-
 		}
 
 		void changeCapacity(unsigned int newCapacity) {
@@ -391,4 +333,4 @@ namespace dequeNS {
 }
 
 
-using dequeNS::deque;
+using dequeNS::Deque;

@@ -4,11 +4,12 @@
 #include <ctime>
 #include <vector>
 #include <gtest/gtest.h>
+
 #include "deque.h"
 
 
 const unsigned long long lcgA = 211, lcgC = 25731, lcgM = 1000000000000037;
-unsigned long long lcgX = 7312ULL;
+unsigned long long lcgX = 71312ULL;
 unsigned long long nextRandom() {
 	return lcgX = (lcgX * lcgA + lcgC) % lcgM;
 }
@@ -71,7 +72,7 @@ inline void tortureIterators(TestIt testBegin, TestIt testEnd, TestIt test,
 
 
 TEST(DEQUE_TEST_MAIN_FUNCTIONALITY, Test1) {
-	deque<unsigned long long> victim;
+	Deque<unsigned long long> victim;
 	std::deque<unsigned long long> standard;
 
 	for (unsigned int i = 0; i < DEF_TEST_SIZE; ++i) {
@@ -113,7 +114,7 @@ TEST(DEQUE_TEST_MAIN_FUNCTIONALITY, Test1) {
 TEST(DEQUE_TEST_ITERATORS, Test1) {
 	typedef std::pair<unsigned long long, unsigned long long> Val;
 
-	deque<Val> victim;
+	Deque<Val> victim;
 	std::deque<Val> standard;
 
 	for (unsigned int i = 0; i < DEF_TEST_SIZE; ++i) {
@@ -141,7 +142,7 @@ TEST(DEQUE_TEST_ITERATORS, Test1) {
 }
 
 TEST(DEQUE_TEST_COMPLEXITY, Test1) {
-	deque<unsigned long long> victim;
+	Deque<unsigned long long> victim;
 
 	unsigned long long startTime = clock();
 	std::vector<unsigned long long> times;
@@ -168,6 +169,21 @@ TEST(DEQUE_TEST_COMPLEXITY, Test1) {
 	}
 
 	ASSERT_NEAR(minK, maxK, maxK * 0.5);
+}
+
+TEST(DEQUE_MANUAL_TEST, TestBrackets) {
+	Deque<int> victim;
+
+	victim.push_back(1);
+	victim.push_front(2);
+	ASSERT_EQ(victim[0], 2);
+	ASSERT_EQ(victim[1], 1);
+
+	victim.rbegin()[1] = 5;
+	ASSERT_EQ(victim[0], 5);
+
+	victim.end()[-1] = 4;
+	ASSERT_EQ(victim[1], 4);
 }
 
 int main(int argc, char** argv) {

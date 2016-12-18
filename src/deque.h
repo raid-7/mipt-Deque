@@ -3,6 +3,9 @@
 #include <iterator>
 #include <algorithm>
 #include <stdexcept>
+#include <iostream>
+#include <typeinfo>
+#include <string>
 
 namespace dequeNS {
 
@@ -210,11 +213,14 @@ namespace dequeNS {
 			return res;
 		}
 
-		Value& operator[](int index) {
-			return data[(head + index) % capacity];
+
+		Value& operator[](size_t index) {
+			index %= static_cast<size_t>(count);
+			return data[(head + static_cast<unsigned int>(index)) % capacity];
 		}
-		const Value& operator[](int index) const {
-			return data[(head + index) % capacity];
+		const Value& operator[](size_t index) const {
+			index %= static_cast<size_t>(count);
+			return data[(head + static_cast<unsigned int>(index)) % capacity];
 		}
 
 		Value& front() {

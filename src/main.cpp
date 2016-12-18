@@ -172,18 +172,18 @@ TEST(DEQUE_TEST_COMPLEXITY, Test1) {
 }
 
 TEST(DEQUE_MANUAL_TEST, TestBrackets) {
-	Deque<int> victim;
+	Deque<double> victim;
 
-	victim.push_back(1);
-	victim.push_front(2);
-	ASSERT_EQ(victim[0], 2);
-	ASSERT_EQ(victim[1], 1);
+	victim.push_back(1.0);
+	victim.push_front(2.0);
+	ASSERT_EQ(victim[0], 2.0);
+	ASSERT_EQ(victim[1], 1.0);
 
-	victim.rbegin()[1] = 5;
-	ASSERT_EQ(victim[0], 5);
+	victim.rbegin()[1] = 5.0;
+	ASSERT_EQ(victim[0], 5.0);
 
-	victim.end()[-1] = 4;
-	ASSERT_EQ(victim[1], 4);
+	victim.end()[-1] = 4.0;
+	ASSERT_EQ(victim[1], 4.0);
 }
 
 int main(int argc, char** argv) {

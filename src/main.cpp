@@ -17,16 +17,26 @@ unsigned long long nextRandom() {
 
 const unsigned int DEF_TEST_SIZE = 2700000;
 
+enum class DequeSimpleAction {
+	PUSH_BACK, PUSH_FRONT, POP_BACK, POP_FRONT
+};
+
+DequeSimpleAction actionFromInt(unsigned int type) {
+	return type == 0 ? DequeSimpleAction::PUSH_BACK :
+			type == 1 ? DequeSimpleAction::PUSH_FRONT :
+			type == 2 ? DequeSimpleAction::POP_BACK :
+						DequeSimpleAction::POP_FRONT;
+}
 
 template <class DequeType, class ValType>
-inline void dequeSimpleAction(DequeType& testingDeque, ValType& val, int queryType) {
-	if (queryType == 0) { // push back
+inline void dequeSimpleAction(DequeType& testingDeque, ValType& val, DequeSimpleAction queryType) {
+	if (queryType == DequeSimpleAction::PUSH_BACK) {
 		testingDeque.push_back(val);
 	}
-	if (queryType == 1) { // push front
+	if (queryType == DequeSimpleAction::PUSH_FRONT) {
 		testingDeque.push_front(val);
 	}
-	if (queryType == 2) { // pop back
+	if (queryType == DequeSimpleAction::POP_BACK) {
 		bool empty = testingDeque.empty();
 		ASSERT_EQ(testingDeque.size() == 0, empty);
 
@@ -35,7 +45,7 @@ inline void dequeSimpleAction(DequeType& testingDeque, ValType& val, int queryTy
 			testingDeque.pop_back();
 		}
 	}
-	if (queryType == 3) { // pop front
+	if (queryType == DequeSimpleAction::POP_FRONT) {
 		bool empty = testingDeque.empty();
 		ASSERT_EQ(testingDeque.size() == 0, empty);
 
@@ -80,7 +90,7 @@ TEST(DEQUE_TEST_MAIN_FUNCTIONALITY, Test1) {
 		queryType = queryType == 4 ? 0 : queryType == 5 ? 1 : queryType;
 
 		unsigned long long val = nextRandom();
-		dequeSimpleAction(victim, val, queryType);
+		dequeSimpleAction(victim, val, actionFromInt(queryType));
 
 		if (queryType == 0) { // push back
 			standard.push_back(val);
@@ -118,8 +128,9 @@ TEST(DEQUE_TEST_ITERATORS, Test1) {
 	std::deque<Val> standard;
 
 	for (unsigned int i = 0; i < DEF_TEST_SIZE; ++i) {
-		int queryType = static_cast<int>(nextRandom() & 7);
-		queryType = queryType >= 6 ? 0 : queryType >= 4 ? 1 : queryType;
+		int queryTypeInt = static_cast<int>(nextRandom() & 7);
+		queryTypeInt = queryTypeInt >= 6 ? 0 : queryTypeInt >= 4 ? 1 : queryTypeInt;
+		DequeSimpleAction queryType = actionFromInt(queryTypeInt);
 
 		Val val = std::make_pair(nextRandom(), nextRandom());
 		dequeSimpleAction(victim, val, queryType);
@@ -141,22 +152,7 @@ TEST(DEQUE_TEST_ITERATORS, Test1) {
 	}
 }
 
-TEST(DEQUE_TEST_COMPLEXITY, Test1) {
-	Deque<unsigned long long> victim;
-
-	unsigned long long startTime = clock();
-	std::vector<unsigned long long> times;
-
-	for (unsigned int i = 0; i < DEF_TEST_SIZE * 5; ++i) {
-		int queryType = static_cast<int>(nextRandom() % 6);
-		queryType = queryType >= 6 ? 0 : queryType >= 4 ? 1 : queryType;
-
-		unsigned long long val = nextRandom();
-		dequeSimpleAction(victim, val, queryType);
-
-		times.push_back(clock() - startTime);
-	}
-
+void assertLinearComplexity(const std::vector<unsigned long long>& times) {
 	double maxK = -1.0, minK = -1.0;
 	for (unsigned int i = times.size() / 5; i < times.size(); ++i) {
 		double k = static_cast<double>(times[i]) / static_cast<double>(i + 1);
@@ -168,7 +164,53 @@ TEST(DEQUE_TEST_COMPLEXITY, Test1) {
 		}
 	}
 
-	ASSERT_NEAR(minK, maxK, maxK * 0.5);
+	ASSERT_NEAR(minK, maxK, maxK * 0.2);
+}
+
+TEST(DEQUE_TEST_COMPLEXITY, Test1) {
+	Deque<unsigned long long> victim;
+
+	unsigned long long startTime = clock();
+	std::vector<unsigned long long> times;
+
+	for (unsigned int i = 0; i < DEF_TEST_SIZE * 5; ++i) {
+		int queryType = static_cast<int>(nextRandom() % 6);
+		queryType = queryType >= 6 ? 0 : queryType >= 4 ? 1 : queryType;
+
+		unsigned long long val = nextRandom();
+		dequeSimpleAction(victim, val, actionFromInt(queryType));
+
+		times.push_back(clock() - startTime);
+	}
+
+	assertLinearComplexity(times);
+}
+
+TEST(DEQUE_TEST_COMPLEXITY, Test2) {
+	Deque<unsigned long long> victim;
+
+	unsigned long long startTime = clock();
+	std::vector<unsigned long long> times;
+
+	const unsigned int SERIES_COUNT = 4;
+	for (unsigned int series = 0; series < SERIES_COUNT; ++series) {
+		for (unsigned int i = 0; i < DEF_TEST_SIZE * (SERIES_COUNT - series); ++i) {
+			int rand = static_cast<int>(nextRandom() % 2);
+			DequeSimpleAction queryType;
+			if (series & 1) {
+				queryType = rand == 0 ? DequeSimpleAction::POP_BACK : DequeSimpleAction::POP_FRONT;
+			} else {
+				queryType = rand == 0 ? DequeSimpleAction::PUSH_BACK : DequeSimpleAction::PUSH_FRONT;
+			}
+
+			unsigned long long val = nextRandom();
+			dequeSimpleAction(victim, val, queryType);
+
+			times.push_back(clock() - startTime);
+		}
+	}
+
+	assertLinearComplexity(times);
 }
 
 TEST(DEQUE_MANUAL_TEST, TestBrackets) {
